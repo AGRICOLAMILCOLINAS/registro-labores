@@ -147,6 +147,7 @@ async function sync(){
   try{
     const res=await fetch(CONFIG.SYNC_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({registros:pend})});
     if(!res.ok) throw new Error(res.status);
+    const j=await res.json().catch(()=>({})); if(!j.ok) throw new Error(j.error||"respuesta inválida");
     const ids=new Set(pend.map(p=>p.id)); save(load().map(r=>ids.has(r.id)?{...r,estado:"enviado"}:r));
     return {ok:true,pend:0,n:pend.length};
   }catch(e){ return {ok:false,pend:pend.length,err:true}; }
