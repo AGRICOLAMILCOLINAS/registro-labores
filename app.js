@@ -54,6 +54,7 @@ function onFinca(){
   optList($("operario"),f?f.operarios:todosOps,"Seleccione el operario");
   const cultivo=f?f.cultivo:"Aguacate Hass";
   optLabores($("labor"),CONFIG.LABORES[cultivo]||[],"Seleccione la labor");
+  optList($("lote"),f?(f.lotes||[]):[],f?"Seleccione el lote":"Primero elija la finca");
   if(f){ pref("finca",f.nombre); $("lider").value=pref("lider_"+f.nombre)||""; }
   cargarDia(); onNovedad(); onLabor();
 }
@@ -124,7 +125,7 @@ $("f").addEventListener("submit",e=>{
     const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b;};
     const cruce=recs.find(r=>r.horaInicio&&r.fecha===base.fecha&&r.trabajador===op&&toMin($("hIni").value)<toMin(r.horaFin)&&toMin($("hFin").value)>toMin(r.horaInicio));
     if(cruce) aviso=` Ojo: se cruza con otro registro de ${op} (${cruce.horaInicio}–${cruce.horaFin}).`;
-    Object.assign(base,{lote:$("lote").value.trim(),laborCod:l.c,labor:l.n,unidad:l.u,horaInicio:$("hIni").value,horaFin:$("hFin").value,
+    Object.assign(base,{lote:$("lote").value,laborCod:l.c,labor:l.n,unidad:l.u,horaInicio:$("hIni").value,horaFin:$("hFin").value,
       pausaMin:Number($("pausa").value)||0,horas:+h.toFixed(2),cantidad:solo?"":q,rendimiento:solo?"":+(q/h).toFixed(2),
       meta:l.meta??"",cumplimiento:l.meta&&!solo?+((q/h)/l.meta*100).toFixed(1):""});
   } else {

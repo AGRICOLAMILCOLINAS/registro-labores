@@ -6,7 +6,7 @@
 const CONFIG = {
   EMPRESA: "Mil Colinas",
   SYNC_URL: "https://script.google.com/macros/s/AKfycby6JICrtMzh_gQgNVcHPXUUrjmmc9Ep7YnAOSMenMWOVeaTtD5YKAmWGgbCs0C8D__J/exec",
-  UNIDADES: ["árboles","plantas","kg","g","bultos","canastillas","m²","ha","metros","hoyos","puntos","litros","bombadas","tanques","camas","trampas","viajes"],
+  UNIDADES: ["árboles","plantas","kg","g","bultos","canastillas","m²","ha","metros","hoyos","puntos","litros","bombadas","tanques","camas","trampas","hormigueros","viajes"],
   CLAVE_SUPERVISOR: "9019",   // clave para ver Registros y Rendimientos (cambiarla)   // dirección del Apps Script de la Google Sheet
 
   LABORES: {
@@ -21,11 +21,15 @@ const CONFIG = {
       {c:"H08", n:"Fertilización granulada",                               u:"árboles", meta:null},
       {c:"H09", n:"Enmiendas (cal)",                                       u:"árboles", meta:null},
       {c:"H10", n:"Materia orgánica",                                      u:"árboles", meta:null},
+      {c:"H30", n:"Descompactación",                                       u:"árboles", meta:null},
       {c:"H11", n:"Mulch",                                                 u:"árboles", meta:null},
       {c:"H12", n:"Despunte",                                              u:"árboles", meta:null},
       {c:"H13", n:"Poda (realce, abrir centro, altura, sanitaria)",        u:"árboles", meta:null},
       {c:"H14", n:"Poda sencilla (una rama)",                              u:"árboles", meta:null},
       {c:"H15", n:"Sellado y cicatrización",                               u:"árboles", meta:null},
+      {c:"H29", n:"Recolección de madera de podas",                        u:"árboles", meta:null},
+      {c:"H27", n:"Drench",                                                u:"árboles", meta:null},
+      {c:"H28", n:"Control de hormiga arriera",                            u:"hormigueros", meta:null},
       {c:"H16", n:"Monitoreo de plagas y enfermedades",                    u:"árboles", meta:null},
       {c:"H17", n:"Tanqueo de dron",                                       u:"ha",      meta:null},
       {c:"H18", n:"Aspersión / fumigación con estacionaria",               u:"árboles", meta:null},
@@ -57,11 +61,11 @@ const CONFIG = {
   },
 
   FINCAS: [
-    {nombre:"La Morelia",     cultivo:"Aguacate Hass", operarios:["Alberto","Francisco"]},
-    {nombre:"Huerto Palermo", cultivo:"Aguacate Hass", operarios:["Jesús"]},
-    {nombre:"El Porvenir",    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis"]},
-    {nombre:"San Luis",       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro"]},
-    {nombre:"Paltacs",        cultivo:"Aguacate Hass", operarios:["John","Alejandro","Marta"]}
+    {nombre:"La Morelia", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Alberto","Francisco"]},
+    {nombre:"Huerto Palermo", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"], cultivo:"Aguacate Hass", operarios:["Jesús"]},
+    {nombre:"El Porvenir", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis"]},
+    {nombre:"San Luis", lotes:["Lote 1","Lote 2","Lote 3"],       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro"]},
+    {nombre:"Paltacs", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],        cultivo:"Aguacate Hass", operarios:["John","Alejandro","Marta"]}
   ]
 };
 /* ===================================================================== */
