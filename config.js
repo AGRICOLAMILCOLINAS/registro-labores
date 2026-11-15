@@ -7,7 +7,7 @@ const CONFIG = {
   EMPRESA: "Mil Colinas",
   SYNC_URL: "https://script.google.com/macros/s/AKfycby6JICrtMzh_gQgNVcHPXUUrjmmc9Ep7YnAOSMenMWOVeaTtD5YKAmWGgbCs0C8D__J/exec",
   UNIDADES: ["árboles","plantas","kg","g","bultos","canastillas","m²","ha","metros","hoyos","puntos","litros","bombadas","tanques","camas","trampas","viajes"],
-  CLAVE_SUPERVISOR: "1234",   // clave para ver Registros y Rendimientos (cambiarla)   // dirección del Apps Script de la Google Sheet
+  CLAVE_SUPERVISOR: "9019",   // clave para ver Registros y Rendimientos (cambiarla)   // dirección del Apps Script de la Google Sheet
 
   LABORES: {
     "Aguacate Hass": [
