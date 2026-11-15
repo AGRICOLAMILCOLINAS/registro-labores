@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de Labores — Fincas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f6b3a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f4f6f2;--card:#fff;--ink:#1d2a1f;--muted:#5f6d61;--line:#dfe5dc;
+  --green:#2f6b3a;--green2:#e6f0e3;--amber:#b7791f;--amber2:#fdf3e1;--red:#b23b3b;--red2:#fbe9e9;--blue:#2d5f8a;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#141a15;--card:#1d251f;--ink:#e7ede6;--muted:#9fae9f;--line:#2f3a31;--green:#6fbf7d;--green2:#1f3324;--amber:#e0a84a;--amber2:#3a2e17;--red:#e07a7a;--red2:#3b1f1f;--blue:#7fb0db}
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px}
+header{background:var(--green);color:#fff;padding:14px 16px 10px;position:sticky;top:0;z-index:5}
+@media (prefers-color-scheme:dark){header{background:#24402a}}
+header h1{margin:0;font-size:18px;font-weight:650}
+.status{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:4px;opacity:.95;flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#9be29f}
+.dot.off{background:#ffb4b4}
+.pill{background:rgba(255,255,255,.18);padding:2px 8px;border-radius:99px}
+nav{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:58px;z-index:4}
+nav button{flex:1;border:0;background:none;padding:12px 4px;font-size:14px;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{color:var(--green);border-color:var(--green);font-weight:600}
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;font-weight:600}
+select,input,textarea{width:100%;font-size:16px;padding:11px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+textarea{min-height:64px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.unit{display:inline-block;background:var(--green2);color:var(--green);padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;margin-left:6px}
+.calc{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.kpi{background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:20px}
+.kpi span{font-size:11px;color:var(--muted)}
+.ok{background:var(--green2)!important;color:var(--green)}
+.mid{background:var(--amber2)!important;color:var(--amber)}
+.bad{background:var(--red2)!important;color:var(--red)}
+.btn{width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:650;cursor:pointer;margin-top:12px;background:var(--green);color:#fff}
+.btn.sec{background:var(--card);color:var(--green);border:1px solid var(--green)}
+.btn.small{width:auto;padding:9px 14px;font-size:14px;margin:0}
+.msg{padding:10px 12px;border-radius:10px;margin-top:10px;font-size:14px;display:none}
+.msg.show{display:block}
+.rec{border-bottom:1px solid var(--line);padding:10px 0;display:flex;justify-content:space-between;gap:10px}
+.rec:last-child{border-bottom:0}
+.rec small{color:var(--muted)}
+.tag{font-size:11px;padding:2px 7px;border-radius:99px;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hide{display:none}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chk{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}.chk label{display:flex;gap:6px;align-items:center;margin:0;font-weight:500;color:var(--ink);font-size:15px}.chk input{width:auto}
+.sub{font-size:14px;font-weight:650;margin:0 0 2px}
+.note{font-size:12px;color:var(--muted);line-height:1.45}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌱 Registro de Labores</h1>
+  <div class="status">
+    <span><span id="netDot" class="dot"></span> <span id="netTxt">En línea</span></span>
+    <span class="pill" id="pendTxt">0 pendientes por enviar</span>
+  </div>
+</header>
+<nav>
+  <button class="on" data-tab="registro">Registrar</button>
+  <button data-tab="lista" class="adm hide">Registros</button>
+  <button data-tab="rend" class="adm hide">Rendimientos</button>
+  <button id="btnAdm" style="flex:0 0 52px" title="Acceso supervisores">🔒</button>
+</nav>
+
+<main>
+<!-- ============ REGISTRAR ============ -->
+<section id="tab-registro">
+  <div class="card">
+    <p class="sub">Datos del día</p>
+    <div class="row">
+      <div><label>Fecha</label><input type="date" id="fecha"></div>
+      <div><label>Finca</label><select id="finca"></select></div>
+    </div>
+    <div class="row">
+      <div><label>Líder</label><input id="lider" placeholder="Nombre del líder"></div>
+      <div><label>Lluvia de ayer (mm)</label><input type="number" id="lluvia" min="0" step="0.5" inputmode="decimal" placeholder="Pluviómetro 7 a.m."></div>
+    </div>
+    <label>¿Llovió hoy?</label>
+    <select id="llovio">
+      <option value="">No</option>
+      <option value="Sí">Sí</option>
+    </select>
+    <div id="lluviaHoras" class="row hide">
+      <div><label>Llovió desde</label><select id="lluDesde"></select></div>
+      <div><label>Hasta</label><select id="lluHasta"></select></div>
+    </div>
+    <label>Novedad general del día (opcional)</label>
+    <input id="novDia" placeholder="Ej: daño en la bomba, llegó insumo, visita técnica…">
+  </div>
+
+  <form id="f" class="card" autocomplete="off">
+    <p class="sub">Registro del operario agrícola</p>
+    <label>Operario agrícola</label>
+    <select id="operario"></select>
+
+    <label>Novedad del operario</label>
+    <select id="novedad">
+      <option value="">Sin novedad — trabajó</option>
+      <option>Falta</option>
+      <option>Incapacidad</option>
+      <option>Permiso</option>
+      <option>Calamidad doméstica</option>
+      <option>Vacaciones</option>
+      <option>Llegada tarde / salida temprano</option>
+    </select>
+    <div id="durBox" class="hide">
+      <label>¿La novedad fue todo el día?</label>
+      <select id="durNov">
+        <option value="todo">Sí, todo el día (no trabajó)</option>
+        <option value="parte">No, solo parte del día (sí trabajó)</option>
+      </select>
+    </div>
+
+    <div id="laborBox">
+    <label>Lote</label>
+    <input id="lote" inputmode="numeric" placeholder="Número o nombre del lote">
+
+    <label>Labor realizada</label>
+    <select id="labor"></select>
+    <div class="hint" id="laborInfo"></div>
+
+    <div class="row3">
+      <div><label>Hora inicio</label><input type="time" id="hIni"></div>
+      <div><label>Hora fin</label><input type="time" id="hFin"></div>
+      <div><label>Pausas (min)</label><input type="number" id="pausa" min="0" step="5" value="0" inputmode="numeric"></div>
+    </div>
+
+    <div class="row">
+      <div><label>Unidad</label><select id="unidadSel"></select></div>
+      <div id="cantBox"><label>Cantidad realizada</label><input type="number" id="cantidad" min="0" step="any" inputmode="decimal" placeholder="Ej: 120"></div>
+    </div>
+
+    <div class="calc">
+      <div class="kpi"><b id="kHoras">0,0</b><span>horas efectivas</span></div>
+      <div class="kpi"><b id="kRend">—</b><span id="kRendU">por hora</span></div>
+      <div class="kpi" id="kMetaBox"><b id="kMeta">—</b><span id="kMetaU">de la meta</span></div>
+    </div>
+
+    
+    </div>
+    <label id="obsLabel">Observaciones (opcional)</label>
+    <textarea id="obs" placeholder="Ej: se cambió de lote, plantas muy cargadas, detalle de la labor 'Otra'…"></textarea>
+
+    <button class="btn" type="submit">Guardar registro</button>
+    <div class="msg" id="msg"></div>
+  </form>
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <span class="note" id="pendOp">0 registros pendientes por enviar</span>
+    <button class="btn small" id="btnSyncOp" type="button">Enviar ahora</button>
+  </div>
+  <div class="card hide" id="pinBox">
+    <p class="sub">Acceso supervisores</p>
+    <input type="password" id="pin" inputmode="numeric" placeholder="Clave">
+    <button class="btn" id="btnPin" type="button">Entrar</button>
+    <div class="msg" id="msgPin"></div>
+  </div>
+</section>
+
+<!-- ============ LISTA ============ -->
+<section id="tab-lista" class="hide">
+  <div class="card">
+    <div class="filters">
+      <div><label>Fecha</label><input type="date" id="lFecha"></div>
+      <div><label>Finca</label><select id="lFinca"></select></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn small" id="btnSync" type="button">Enviar pendientes</button>
+      <button class="btn small sec" id="btnCopy" type="button">Copiar como tabla</button>
+    </div>
+    <div class="msg" id="msgL"></div>
+  </div>
+  <div class="card" id="listaRecs"></div>
+</section>
+
+<!-- ============ RENDIMIENTOS ============ -->
+<section id="tab-rend" class="hide">
+  <div class="card">
+    <div class="filters">
+      <div><label>Desde</label><input type="date" id="rDesde"></div>
+      <div><label>Hasta</label><input type="date" id="rHasta"></div>
+      <div><label>Finca</label><select id="rFinca"></select></div>
+      <div><label>Labor</label><select id="rLabor"></select></div>
+    </div>
+    <p class="note">Rendimiento = cantidad ÷ horas efectivas. Verde ≥ 90 % de la meta · Amarillo 70–89 % · Rojo &lt; 70 %.</p>
+  </div>
+  <div class="card" style="overflow-x:auto" id="rendTabla"></div>
+</section>
+</main>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
