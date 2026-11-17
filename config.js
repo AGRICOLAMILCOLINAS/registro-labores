@@ -61,7 +61,7 @@ const CONFIG = {
   },
 
   FINCAS: [
-    {nombre:"La Morelia", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Alberto","Francisco"]},
+    {nombre:"La Morelia", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Adalberto","Francisco"]},
     {nombre:"Huerto Palermo", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"], cultivo:"Aguacate Hass", operarios:["Jesús"]},
     {nombre:"El Porvenir", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis"]},
     {nombre:"San Luis", lotes:["Lote 1","Lote 2","Lote 3"],       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro"]},
