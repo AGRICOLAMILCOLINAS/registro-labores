@@ -51,13 +51,21 @@ function initForm(){
 function onFinca(){
   const f=fincaObj($("finca").value);
   const todosOps=[...new Set(CONFIG.FINCAS.flatMap(x=>x.operarios))];
-  optList($("operario"),f?f.operarios:todosOps,"Seleccione el operario");
+  optList($("operario"),[...(f?f.operarios:todosOps),"Contratista"],"Seleccione el operario");
+  onOperario();
   const cultivo=f?f.cultivo:"Aguacate Hass";
   optLabores($("labor"),CONFIG.LABORES[cultivo]||[],"Seleccione la labor");
-  optList($("lote"),f?(f.lotes||[]):[],f?"Seleccione el lote":"Primero elija la finca");
+  const ls=f?(f.lotes||[]):[];
+  $("lotes").innerHTML=ls.length?`<label><input type="checkbox" id="loteTodos"> <b>Todos</b></label>`+ls.map(l=>`<label><input type="checkbox" class="lote" value="${esc(l)}"> ${esc(l)}</label>`).join(""):`<span class="note">${f?"Esta finca no tiene lotes cargados":"Primero elija la finca"}</span>`;
+  const t=$("loteTodos");
+  if(t){ t.addEventListener("change",()=>document.querySelectorAll(".lote").forEach(c=>c.checked=t.checked));
+    document.querySelectorAll(".lote").forEach(c=>c.addEventListener("change",()=>{ const all=[...document.querySelectorAll(".lote")]; t.checked=all.every(x=>x.checked); })); }
   if(f){ pref("finca",f.nombre); $("lider").value=pref("lider_"+f.nombre)||""; }
   cargarDia(); onNovedad(); onLabor();
 }
+function lotesSel(){ return [...document.querySelectorAll(".lote:checked")].map(c=>c.value).join(", "); }
+function onOperario(){ const c=$("operario").value==="Contratista"; $("contBox").classList.toggle("hide",!c); if(!c) $("contNombre").value=""; }
+$("operario").addEventListener("change",onOperario);
 function trabaja(){ return !$("novedad").value || $("durNov").value==="parte"; }
 function onNovedad(){
   $("durBox").classList.toggle("hide",!$("novedad").value);
@@ -98,7 +106,9 @@ $("labor").addEventListener("change",onLabor);
 
 $("f").addEventListener("submit",e=>{
   e.preventDefault();
-  const f=fincaObj($("finca").value), op=$("operario").value, nov=$("novedad").value, trab=trabaja();
+  const f=fincaObj($("finca").value), nov=$("novedad").value, trab=trabaja();
+  let op=$("operario").value;
+  if(op==="Contratista"){ const n=$("contNombre").value.trim(); if(!n) return msg($("msg"),"Escriba el nombre del contratista.","bad"); op="Contratista — "+n; }
   if(!f){ $("finca").focus(); return msg($("msg"),"Falta elegir la finca (arriba, en Datos del día).","bad"); }
   if(!op) return msg($("msg"),"Elija el operario agrícola.","bad");
   if($("llovio").value==="Sí"&&(!$("lluDesde").value||!$("lluHasta").value||$("lluHasta").value<=$("lluDesde").value)) return msg($("msg"),"Indique de qué hora a qué hora llovió.","bad");
@@ -125,7 +135,7 @@ $("f").addEventListener("submit",e=>{
     const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b;};
     const cruce=recs.find(r=>r.horaInicio&&r.fecha===base.fecha&&r.trabajador===op&&toMin($("hIni").value)<toMin(r.horaFin)&&toMin($("hFin").value)>toMin(r.horaInicio));
     if(cruce) aviso=` Ojo: se cruza con otro registro de ${op} (${cruce.horaInicio}–${cruce.horaFin}).`;
-    Object.assign(base,{lote:$("lote").value,laborCod:l.c,labor:l.n,unidad:l.u,horaInicio:$("hIni").value,horaFin:$("hFin").value,
+    Object.assign(base,{lote:lotesSel(),laborCod:l.c,labor:l.n,unidad:l.u,horaInicio:$("hIni").value,horaFin:$("hFin").value,
       pausaMin:Number($("pausa").value)||0,horas:+h.toFixed(2),cantidad:solo?"":q,rendimiento:solo?"":+(q/h).toFixed(2),
       meta:l.meta??"",cumplimiento:l.meta&&!solo?+((q/h)/l.meta*100).toFixed(1):""});
   } else {

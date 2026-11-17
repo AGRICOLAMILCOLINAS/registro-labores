@@ -110,6 +110,10 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
     <p class="sub">Registro del operario agrícola</p>
     <label>Operario agrícola</label>
     <select id="operario"></select>
+    <div id="contBox" class="hide">
+      <label>Nombre del contratista</label>
+      <input id="contNombre" placeholder="Nombre de la persona o empresa">
+    </div>
 
     <label>Novedad del operario</label>
     <select id="novedad">
@@ -130,8 +134,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
     </div>
 
     <div id="laborBox">
-    <label>Lote</label>
-    <select id="lote"></select>
+    <label>Lotes (puede marcar varios)</label>
+    <div id="lotes" class="chk"></div>
 
     <label>Labor realizada</label>
     <select id="labor"></select>
