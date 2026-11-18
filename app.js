@@ -131,6 +131,10 @@ $("f").addEventListener("submit",e=>{
     const l={...l0,u:solo?"":u,meta:u===l0.u?l0.meta:null}, q=solo?NaN:parseFloat($("cantidad").value);
     if(h<=0) return msg($("msg"),"Revise las horas: la hora fin debe ser mayor que la de inicio (descontando pausas).","bad");
     if(!solo&&!(q>=0)) return msg($("msg"),"Escriba la cantidad realizada.","bad");
+    const dec=($("cantidad").value.split(/[.,]/)[1]||"");
+    if(!solo&&dec.length>2) return msg($("msg"),"Escriba la cantidad sin puntos de miles. Ej: 4991, no 4.991","bad");
+    if(recs.some(r=>r.fecha===base.fecha&&r.trabajador===op&&r.laborCod===l0.c&&r.horaInicio===$("hIni").value))
+      return msg($("msg"),`Ese registro ya existe: ${op}, ${l0.n}, desde las ${$("hIni").value}.`,"bad");
     if(/99$/.test(l.c)&&!base.obs) return msg($("msg"),"Para 'Otra' describa la labor en observaciones.","bad");
     const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b;};
     const cruce=recs.find(r=>r.horaInicio&&r.fecha===base.fecha&&r.trabajador===op&&toMin($("hIni").value)<toMin(r.horaFin)&&toMin($("hFin").value)>toMin(r.horaInicio));
@@ -176,9 +180,27 @@ window.addEventListener("online",()=>{net();sync();}); window.addEventListener("
 function net(){ const on=navigator.onLine; $("netDot").className="dot"+(on?"":" off"); $("netTxt").textContent=on?"En línea":"Sin conexión — guardando en el celular"; }
 
 /* ---------- Lista ---------- */
+let remotos=null, remotosHora="", claveSup="";
+function datos(){ const loc=load(); if(!remotos) return loc; const ids=new Set(remotos.map(r=>String(r.id))); return remotos.concat(loc.filter(r=>!ids.has(String(r.id)))); }
+async function cargarRemotos(clave){
+  if(!CONFIG.SYNC_URL) throw new Error("sin hoja");
+  if(!navigator.onLine) throw new Error("offline");
+  const d=new Date(); d.setDate(d.getDate()-180);
+  const res=await fetch(CONFIG.SYNC_URL+"?clave="+encodeURIComponent(clave)+"&desde="+d.toISOString().slice(0,10)+"&t="+Date.now());
+  const j=await res.json();
+  if(!j.ok) throw new Error(j.error||"error");
+  remotos=j.registros||[]; remotosHora=new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+  document.querySelectorAll(".actHora").forEach(e=>e.textContent=`Datos de todas las fincas · actualizado ${remotosHora} · ${remotos.length} registros`);
+}
+async function actualizar(btn){
+  btn.disabled=true; const t=btn.textContent; btn.textContent="Actualizando…";
+  try{ await cargarRemotos(claveSup); refresh(); }
+  catch(e){ document.querySelectorAll(".actHora").forEach(x=>x.textContent=e.message==="offline"?"Sin internet: mostrando los últimos datos descargados.":"No se pudo actualizar. Intente de nuevo."); }
+  finally{ btn.disabled=false; btn.textContent=t; }
+}
 function renderLista(){
   const fe=$("lFecha").value, fi=$("lFinca").value;
-  const recs=load().filter(r=>(!fe||r.fecha===fe)&&(!fi||r.finca===fi)).sort((a,b)=>(a.trabajador+a.horaInicio).localeCompare(b.trabajador+b.horaInicio));
+  const recs=datos().filter(r=>(!fe||r.fecha===fe)&&(!fi||r.finca===fi)).sort((a,b)=>(a.trabajador+a.horaInicio).localeCompare(b.trabajador+b.horaInicio));
   $("listaRecs").innerHTML=recs.length?recs.map(r=>{
     const tit=r.labor?`${esc(r.labor)}`:`${esc(r.novedad)} — todo el día`;
     const det=r.labor?`${r.horaInicio}–${r.horaFin} (${fmt(r.horas)} h) · ${r.unidad?fmt(r.cantidad,1)+" "+r.unidad:"solo tiempo"}${r.lote?" · "+esc(r.lote):""}`:"";
@@ -189,17 +211,17 @@ function renderLista(){
 }
 $("btnCopy").addEventListener("click",async()=>{
   const cols=["fecha","finca","cultivo","lider","lluviaMm","llovioHoy","lluviaDesde","lluviaHasta","novedadDia","trabajador","novedad","novedadDuracion","lote","labor","unidad","horaInicio","horaFin","pausaMin","horas","cantidad","rendimiento","meta","cumplimiento","obs","estado"];
-  const txt=[cols.join("\t"),...load().map(r=>cols.map(c=>String(r[c]??"").replace(/\t|\n/g," ")).join("\t"))].join("\n");
+  const txt=[cols.join("\t"),...datos().map(r=>cols.map(c=>String(r[c]??"").replace(/\t|\n/g," ")).join("\t"))].join("\n");
   try{ await navigator.clipboard.writeText(txt); msg($("msgL"),"Copiado. Péguelo en Excel o Google Sheets.","ok"); }catch(e){ msg($("msgL"),"El navegador no permitió copiar.","bad"); }
 });
 
 /* ---------- Rendimientos y novedades ---------- */
 function renderRend(){
   const d=$("rDesde").value,h=$("rHasta").value,fi=$("rFinca").value,la=$("rLabor").value;
-  const all=load().filter(r=>(!d||r.fecha>=d)&&(!h||r.fecha<=h)&&(!fi||r.finca===fi));
-  const recs=all.filter(r=>r.labor&&(!la||r.laborCod===la));
+  const all=datos().filter(r=>(!d||r.fecha>=d)&&(!h||r.fecha<=h)&&(!fi||r.finca===fi));
+  const laN=la?(laborObj(la)||{}).n:""; const recs=all.filter(r=>r.labor&&(!la||r.labor===laN));
   const g={};
-  recs.forEach(r=>{const k=r.trabajador+"|"+r.laborCod+"|"+r.unidad;(g[k]=g[k]||{op:r.trabajador,finca:r.finca,cod:r.laborCod,labor:r.labor,u:r.unidad,meta:r.meta,q:0,h:0});g[k].q+=Number(r.cantidad)||0;g[k].h+=r.horas;});
+  recs.forEach(r=>{const k=r.trabajador+"|"+r.labor+"|"+r.unidad;(g[k]=g[k]||{op:r.trabajador,finca:r.finca,cod:r.laborCod,labor:r.labor,u:r.unidad,meta:r.meta,q:0,h:0});g[k].q+=Number(r.cantidad)||0;g[k].h+=Number(r.horas)||0;});
   const rows=Object.values(g).map(x=>({...x,rend:x.u?x.q/x.h:NaN,pct:x.meta&&x.u?(x.q/x.h)/x.meta*100:NaN})).sort((a,b)=>a.labor.localeCompare(b.labor)||(a.pct-b.pct)||(a.rend-b.rend));
   const nov={}; all.filter(r=>r.novedad).forEach(r=>{(nov[r.trabajador]=nov[r.trabajador]||{})[r.novedad]=(nov[r.trabajador][r.novedad]||0)+(r.novedadDuracion==="Todo el día"?1:0.5);});
   const tipos=[...new Set(all.filter(r=>r.novedad).map(r=>r.novedad))];
@@ -222,10 +244,17 @@ $("btnSyncOp").addEventListener("click",async()=>{ const r=await sync();
   else if(!navigator.onLine) msg($("msg"),"Sin señal. Los registros siguen guardados en este celular.","mid");
   else if(!CONFIG.SYNC_URL) msg($("msg"),"Aún no está conectada la Google Sheet. Los registros quedan guardados aquí.","mid");
   else msg($("msg"),"No se pudo enviar. Se reintentará automáticamente.","bad"); });
-function setAdmin(on){ admin=on; document.querySelectorAll(".adm").forEach(b=>b.classList.toggle("hide",!on)); $("btnAdm").textContent=on?"🔓":"🔒"; $("pinBox").classList.add("hide");
+function setAdmin(on){ admin=on; if(!on){ remotos=null; claveSup=""; } document.querySelectorAll(".adm").forEach(b=>b.classList.toggle("hide",!on)); $("btnAdm").textContent=on?"🔓":"🔒"; $("pinBox").classList.add("hide");
   if(!on){ document.querySelector('nav button[data-tab=registro]').click(); } refresh(); }
 $("btnAdm").addEventListener("click",()=>{ if(admin) return setAdmin(false); document.querySelector('nav button[data-tab=registro]').click(); $("pinBox").classList.toggle("hide"); $("pin").focus(); });
-$("btnPin").addEventListener("click",()=>{ if($("pin").value===CONFIG.CLAVE_SUPERVISOR){ $("pin").value=""; setAdmin(true); } else msg($("msgPin"),"Clave incorrecta.","bad"); });
+$("btnPin").addEventListener("click",async()=>{
+  const c=$("pin").value.trim(); if(!c) return;
+  const b=$("btnPin"); b.disabled=true; b.textContent="Verificando…";
+  try{ await cargarRemotos(c); claveSup=c; $("pin").value=""; setAdmin(true); }
+  catch(e){ msg($("msgPin"), e.message==="clave"?"Clave incorrecta.":e.message==="offline"?"Necesita internet para ver la información de todas las fincas.":"No se pudo conectar con la hoja. Intente de nuevo.","bad"); }
+  finally{ b.disabled=false; b.textContent="Entrar"; }
+});
+document.querySelectorAll(".btnAct").forEach(b=>b.addEventListener("click",()=>actualizar(b)));
 document.querySelectorAll("nav button[data-tab]").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("nav button[data-tab]").forEach(x=>x.classList.toggle("on",x===b));
   ["registro","lista","rend"].forEach(t=>$("tab-"+t).classList.toggle("hide",t!==b.dataset.tab)); refresh();

@@ -1,0 +1,139 @@
+/**
+ * Registro de Labores — Mil Colinas  (versión 2)
+ * - Recibe los registros de la app y los agrega a la primera hoja.
+ * - Escribe cada dato según el TÍTULO de la columna (fila 1), así se pueden
+ *   mover o agregar columnas sin dañar nada.
+ * - No repite registros (mismo ID, o mismo operario + fecha + labor + hora de inicio).
+ * - Con la clave de supervisor, le devuelve a la app todos los registros para
+ *   las pestañas Registros y Rendimientos.
+ */
+const CLAVE_SUPERVISOR = "9019";
+
+// Título de la columna en la hoja  →  dato que manda la app
+const COLUMNAS = {
+  "ID": "id",
+  "Enviado desde celular": "creado",
+  "Recibido": "_recibido",
+  "Fecha": "fecha",
+  "Finca": "finca",
+  "Cultivo": "cultivo",
+  "Líder": "lider",
+  "Lluvia ayer (mm)": "lluviaMm",
+  "¿Llovió hoy?": "llovioHoy",
+  "Lluvia desde": "lluviaDesde",
+  "Lluvia hasta": "lluviaHasta",
+  "Novedad del día": "novedadDia",
+  "Operario": "trabajador",
+  "Novedad operario": "novedad",
+  "Duración novedad": "novedadDuracion",
+  "Lote": "lote",
+  "Labor": "labor",
+  "Unidad": "unidad",
+  "Hora inicio": "horaInicio",
+  "Hora fin": "horaFin",
+  "Pausas (min)": "pausaMin",
+  "Horas efectivas": "horas",
+  "Cantidad": "cantidad",
+  "Rendimiento por hora": "rendimiento",
+  "Rendimiento en": "_rendUnidad",
+  "Meta por hora": "meta",
+  "% cumplimiento": "cumplimiento",
+  "Observaciones": "obs"
+};
+
+function hoja_() { return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0]; }
+function titulos_(h) { return h.getRange(1, 1, 1, h.getLastColumn()).getValues()[0].map(t => String(t).trim()); }
+function letra_(i) { let s = "", n = i + 1; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+
+// Columnas que se calculan con fórmula: si se corrige un dato en la hoja, el cálculo se actualiza solo
+function formula_(k, tit, fila) {
+  const c = nombre => { const i = tit.findIndex(t => COLUMNAS[t] === nombre); return i < 0 ? null : letra_(i) + fila; };
+  const ini = c("horaInicio"), fin = c("horaFin"), pau = c("pausaMin"), hor = c("horas"),
+        can = c("cantidad"), ren = c("rendimiento"), met = c("meta"), uni = c("unidad");
+  if (k === "horas" && ini && fin) return '=IF(OR(' + ini + '="",' + fin + '=""),"",ROUND((' + fin + '-' + ini + ')*24-N(' + (pau || 0) + ')/60,2))';
+  if (k === "rendimiento" && can && hor) return '=IF(OR(' + can + '="",N(' + hor + ')=0),"",ROUND(' + can + '/' + hor + ',2))';
+  if (k === "cumplimiento" && met && ren) return '=IF(OR(' + met + '="",' + ren + '=""),"",ROUND(' + ren + '/' + met + '*100,1))';
+  if (k === "_rendUnidad" && uni) return '=IF(' + uni + '="","",' + uni + '&"/hora")';
+  return null;
+}
+
+function claveDup_(o) { return [o.fecha, o.trabajador, o.labor, o.horaInicio].join("|"); }
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const registros = (JSON.parse(e.postData.contents).registros) || [];
+    const h = hoja_();
+    const tit = titulos_(h);
+    const existentes = leer_(h, tit);
+    const ids = new Set(existentes.map(r => String(r.id)));
+    const dups = new Set(existentes.filter(r => r.labor).map(claveDup_));
+
+    const ahora = new Date();
+    const ultima = h.getLastRow();
+    const filas = [];
+    registros.forEach(r => {
+      if (!r.id || ids.has(String(r.id))) return;
+      if (r.labor && dups.has(claveDup_(r))) return;
+      ids.add(String(r.id)); if (r.labor) dups.add(claveDup_(r));
+      const fila = ultima + 1 + filas.length;
+      filas.push(tit.map(t => {
+        const k = COLUMNAS[t];
+        if (!k) return "";
+        if (k === "_recibido") return ahora;
+        const f = formula_(k, tit, fila);
+        if (f) return f;
+        return r[k] === undefined ? "" : r[k];
+      }));
+    });
+
+    if (filas.length) {
+      const faltan = ultima + filas.length - h.getMaxRows();
+      if (faltan > 0) h.insertRowsAfter(h.getMaxRows(), faltan + 500);
+      h.getRange(ultima + 1, 1, filas.length, tit.length).setValues(filas);
+    }
+    return respuesta_({ ok: true, recibidos: registros.length, nuevos: filas.length });
+  } catch (err) {
+    return respuesta_({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  if (!p.clave) return respuesta_({ ok: true, mensaje: "Registro de Labores activo" });
+  if (p.clave !== CLAVE_SUPERVISOR) return respuesta_({ ok: false, error: "clave" });
+  const h = hoja_();
+  let regs = leer_(h, titulos_(h));
+  if (p.desde) regs = regs.filter(r => !r.fecha || r.fecha >= p.desde);
+  return respuesta_({ ok: true, registros: regs });
+}
+
+// Lee la hoja y la convierte en registros con los mismos nombres que usa la app
+function leer_(h, tit) {
+  const n = h.getLastRow() - 1;
+  if (n < 1) return [];
+  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const vals = h.getRange(2, 1, n, tit.length).getValues();
+  return vals.filter(f => f.some(v => v !== "")).map(f => {
+    const o = {};
+    tit.forEach((t, i) => {
+      const k = COLUMNAS[t]; if (!k || k.charAt(0) === "_") return;
+      let v = f[i];
+      if (v instanceof Date) {
+        if (k === "fecha") v = Utilities.formatDate(v, tz, "yyyy-MM-dd");
+        else if (/^hora|^lluvia(Desde|Hasta)/.test(k)) v = Utilities.formatDate(v, tz, "HH:mm");
+        else v = v.toISOString();
+      }
+      o[k] = v;
+    });
+    o.estado = "enviado";
+    return o;
+  });
+}
+
+function respuesta_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}

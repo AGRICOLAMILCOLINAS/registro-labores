@@ -149,7 +149,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 
     <div class="row">
       <div><label>Unidad</label><select id="unidadSel"></select></div>
-      <div id="cantBox"><label>Cantidad realizada</label><input type="number" id="cantidad" min="0" step="any" inputmode="decimal" placeholder="Ej: 120"></div>
+      <div id="cantBox"><label>Cantidad realizada</label><input type="number" id="cantidad" min="0" step="any" inputmode="decimal" placeholder="Ej: 120 (sin puntos de miles)"></div>
     </div>
 
     <div class="calc">
@@ -188,7 +188,9 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
     <div class="toolbar">
       <button class="btn small" id="btnSync" type="button">Enviar pendientes</button>
       <button class="btn small sec" id="btnCopy" type="button">Copiar como tabla</button>
+      <button class="btn small sec btnAct" type="button">↻ Actualizar</button>
     </div>
+    <p class="note actHora"></p>
     <div class="msg" id="msgL"></div>
   </div>
   <div class="card" id="listaRecs"></div>
@@ -203,6 +205,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
       <div><label>Finca</label><select id="rFinca"></select></div>
       <div><label>Labor</label><select id="rLabor"></select></div>
     </div>
+    <div class="toolbar"><button class="btn small sec btnAct" type="button">↻ Actualizar</button></div>
+    <p class="note actHora"></p>
     <p class="note">Rendimiento = cantidad ÷ horas efectivas. Verde ≥ 90 % de la meta · Amarillo 70–89 % · Rojo &lt; 70 %.</p>
   </div>
   <div class="card" style="overflow-x:auto" id="rendTabla"></div>
