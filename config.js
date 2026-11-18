@@ -32,6 +32,7 @@ const CONFIG = {
       {c:"H28", n:"Control de hormiga arriera",                            u:"hormigueros", meta:null},
       {c:"H16", n:"Monitoreo de plagas y enfermedades",                    u:"árboles", meta:null},
       {c:"H17", n:"Tanqueo de dron",                                       u:"ha",      meta:null},
+      {c:"H31", n:"Piloto de dron",                                        u:"ha",      meta:null},
       {c:"H18", n:"Aspersión / fumigación con estacionaria",               u:"árboles", meta:null},
       {c:"H19", n:"Cosecha",                                               u:"canastillas", meta:null},
       {c:"H20", n:"Cargue y descargue de canastillas o fruta",             u:"canastillas", meta:null},
@@ -61,11 +62,11 @@ const CONFIG = {
   },
 
   FINCAS: [
-    {nombre:"La Morelia", lider:"Edwin", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Adalberto","Francisco"]},
-    {nombre:"Huerto Palermo", lider:"Edwin", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"], cultivo:"Aguacate Hass", operarios:["Jesús"]},
-    {nombre:"El Porvenir", lider:"James", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis"]},
-    {nombre:"San Luis", lider:"Felipe", lotes:["Lote 1","Lote 2","Lote 3"],       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro"]},
-    {nombre:"Paltacs", lider:"Felipe", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],        cultivo:"Aguacate Hass", operarios:["John","Alejandro","Marta"]}
+    {nombre:"La Morelia", lider:"Edwin", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Adalberto","Francisco","Edwin","James"]},
+    {nombre:"Huerto Palermo", lider:"Edwin", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"], cultivo:"Aguacate Hass", operarios:["Jesús","Edwin","James"]},
+    {nombre:"El Porvenir", lider:"James", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis","Edwin","James"]},
+    {nombre:"San Luis", lider:"Felipe", lotes:["Lote 1","Lote 2","Lote 3"],       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro","Edwin","James"]},
+    {nombre:"Paltacs", lider:"Felipe", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],        cultivo:"Aguacate Hass", operarios:["John","Alejandro","Marta","Edwin","James"]}
   ]
 };
 /* ===================================================================== */
