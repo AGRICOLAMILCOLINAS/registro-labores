@@ -44,8 +44,12 @@ $("llovio").addEventListener("change",()=>{ onLlovio(); guardarDia(); });
 $("fecha").addEventListener("change",cargarDia);
 
 /* ---------- Formulario (varias labores por registro) ---------- */
+let fechaAuto="";
+function revisarFecha(){ const h=hoy(); if($("fecha").value===fechaAuto && fechaAuto!==h){ $("fecha").value=h; fechaAuto=h; cargarDia(); } }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) revisarFecha(); });
+window.addEventListener("focus",revisarFecha); setInterval(revisarFecha,60000);
 function initForm(){
-  $("fecha").value=hoy();
+  $("fecha").value=hoy(); fechaAuto=$("fecha").value;
   optList($("finca"),CONFIG.FINCAS.map(f=>f.nombre),"Seleccione la finca");
   const f=pref("finca"); if(f&&fincaObj(f)) $("finca").value=f;
   onFinca();
@@ -184,8 +188,8 @@ $("f").addEventListener("submit",e=>{
       if(!solo&&dec.length>2) return err("escriba la cantidad sin puntos de miles. Ej: 4991, no 4.991");
       const obsT=q(t,"obs").value.trim();
       if(/99$/.test(l.c)&&!obsT) return err("para 'Otra' describa la labor en observaciones.");
-      if(recs.some(r=>r.fecha===$("fecha").value&&r.trabajador===op&&r.laborCod===l0.c&&r.horaInicio===hI))
-        return err(`ese registro ya existe: ${op}, ${l0.n}, desde las ${hI}.`);
+      if(recs.some(r=>r.estado==="pendiente"&&r.fecha===$("fecha").value&&r.trabajador===op&&r.laborCod===l0.c&&r.horaInicio===hI))
+        return err(`ese registro ya existe: ${op}, ${l0.n}, desde las ${hI}, con fecha ${$("fecha").value.split("-").reverse().join("/")}. Todavía está pendiente por enviar en este celular.`);
       const choque=nuevos.find(r=>toMin(hI)<toMin(r.horaFin)&&toMin(hF)>toMin(r.horaInicio));
       if(choque) return err(`el horario ${hI}–${hF} se cruza con ${choque.labor} (${choque.horaInicio}–${choque.horaFin}).`);
       const lotes=[...t.querySelectorAll(".lote:checked")].map(c=>c.value).join(", ");
