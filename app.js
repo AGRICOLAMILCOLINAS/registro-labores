@@ -151,6 +151,7 @@ $("f").addEventListener("submit",e=>{
   if(op==="Contratista"){ const n=$("contNombre").value.trim(); if(!n) return msg($("msg"),"Escriba el nombre del contratista.","bad"); op="Contratista — "+n; }
   if(!f){ $("finca").focus(); return msg($("msg"),"Falta elegir la finca (arriba, en Datos del día).","bad"); }
   if(!op) return msg($("msg"),"Elija el operario agrícola.","bad");
+  if($("lluvia").value.trim()===""){ $("lluvia").focus(); return msg($("msg"),"Escriba la lluvia de ayer en mm (pluviómetro). Si no llovió, ponga 0.","bad"); }
   if($("llovio").value==="Sí"&&(!$("lluDesde").value||!$("lluHasta").value||$("lluHasta").value<=$("lluDesde").value)) return msg($("msg"),"Indique de qué hora a qué hora llovió.","bad");
   guardarDia();
   const dia=getLS(DIAS,{})[diaKey()]||{};
