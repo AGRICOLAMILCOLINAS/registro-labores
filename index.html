@@ -63,6 +63,11 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .chk{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}.chk label{display:flex;gap:6px;align-items:center;margin:0;font-weight:500;color:var(--ink);font-size:15px}.chk input{width:auto}
 .sub{font-size:14px;font-weight:650;margin:0 0 2px}
 .note{font-size:12px;color:var(--muted);line-height:1.45}
+.tarea{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;background:var(--card)}
+.tareaHead{display:flex;justify-content:space-between;align-items:center}
+.tareaHead b{color:var(--green)}
+.quitar{border:0;background:none;color:var(--red);font-size:14px;cursor:pointer;padding:4px}
+.tErr{border-color:var(--red);box-shadow:0 0 0 2px var(--red2)}
 </style>
 </head>
 <body>
@@ -134,36 +139,15 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
     </div>
 
     <div id="laborBox">
-    <label>Lotes (puede marcar varios)</label>
-    <div id="lotes" class="chk"></div>
-
-    <label>Labor realizada</label>
-    <select id="labor"></select>
-    <div class="hint" id="laborInfo"></div>
-
-    <div class="row3">
-      <div><label>Hora inicio</label><input type="time" id="hIni"></div>
-      <div><label>Hora fin</label><input type="time" id="hFin"></div>
-      <div><label>Pausas (min)</label><input type="number" id="pausa" min="0" step="5" value="0" inputmode="numeric"></div>
+      <div id="tareas"></div>
+      <button class="btn sec" type="button" id="btnOtra">+ Agregar otra labor</button>
+    </div>
+    <div id="obsBox" class="hide">
+      <label>Detalle de la novedad (opcional)</label>
+      <textarea id="obs" placeholder="Ej: cita médica en la mañana, llegó a las 9 a. m.…"></textarea>
     </div>
 
-    <div class="row">
-      <div><label>Unidad</label><select id="unidadSel"></select></div>
-      <div id="cantBox"><label>Cantidad realizada</label><input type="number" id="cantidad" min="0" step="any" inputmode="decimal" placeholder="Ej: 120 (sin puntos de miles)"></div>
-    </div>
-
-    <div class="calc">
-      <div class="kpi"><b id="kHoras">0,0</b><span>horas efectivas</span></div>
-      <div class="kpi"><b id="kRend">—</b><span id="kRendU">por hora</span></div>
-      <div class="kpi" id="kMetaBox"><b id="kMeta">—</b><span id="kMetaU">de la meta</span></div>
-    </div>
-
-    
-    </div>
-    <label id="obsLabel">Observaciones (opcional)</label>
-    <textarea id="obs" placeholder="Ej: se cambió de lote, plantas muy cargadas, detalle de la labor 'Otra'…"></textarea>
-
-    <button class="btn" type="submit">Guardar registro</button>
+    <button class="btn" type="submit">Guardar todo</button>
     <div class="msg" id="msg"></div>
   </form>
   <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">

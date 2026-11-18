@@ -42,68 +42,107 @@ function onLlovio(){ $("lluviaHoras").classList.toggle("hide",$("llovio").value!
 $("llovio").addEventListener("change",()=>{ onLlovio(); guardarDia(); });
 $("fecha").addEventListener("change",cargarDia);
 
-/* ---------- Formulario ---------- */
+/* ---------- Formulario (varias labores por registro) ---------- */
 function initForm(){
   $("fecha").value=hoy();
   optList($("finca"),CONFIG.FINCAS.map(f=>f.nombre),"Seleccione la finca");
   const f=pref("finca"); if(f&&fincaObj(f)) $("finca").value=f;
   onFinca();
 }
+const cultivoActual=()=>{ const f=fincaObj($("finca").value); return f?f.cultivo:(CONFIG.FINCAS[0]||{}).cultivo; };
 function onFinca(){
   const f=fincaObj($("finca").value);
   const todosOps=[...new Set(CONFIG.FINCAS.flatMap(x=>x.operarios))];
   optList($("operario"),[...(f?f.operarios:todosOps),"Contratista"],"Seleccione el operario");
   onOperario();
-  const cultivo=f?f.cultivo:"Aguacate Hass";
-  optLabores($("labor"),CONFIG.LABORES[cultivo]||[],"Seleccione la labor");
-  const ls=f?(f.lotes||[]):[];
-  $("lotes").innerHTML=ls.length?`<label><input type="checkbox" id="loteTodos"> <b>Todos</b></label>`+ls.map(l=>`<label><input type="checkbox" class="lote" value="${esc(l)}"> ${esc(l)}</label>`).join(""):`<span class="note">${f?"Esta finca no tiene lotes cargados":"Primero elija la finca"}</span>`;
-  const t=$("loteTodos");
-  if(t){ t.addEventListener("change",()=>document.querySelectorAll(".lote").forEach(c=>c.checked=t.checked));
-    document.querySelectorAll(".lote").forEach(c=>c.addEventListener("change",()=>{ const all=[...document.querySelectorAll(".lote")]; t.checked=all.every(x=>x.checked); })); }
-  if(f){ pref("finca",f.nombre); $("lider").value=pref("lider_"+f.nombre)||""; }
-  cargarDia(); onNovedad(); onLabor();
+  if(f){ pref("finca",f.nombre); $("lider").value=pref("lider_"+f.nombre)||f.lider||""; }
+  reiniciarTareas("");
+  cargarDia(); onNovedad();
 }
-function lotesSel(){ return [...document.querySelectorAll(".lote:checked")].map(c=>c.value).join(", "); }
 function onOperario(){ const c=$("operario").value==="Contratista"; $("contBox").classList.toggle("hide",!c); if(!c) $("contNombre").value=""; }
 $("operario").addEventListener("change",onOperario);
 function trabaja(){ return !$("novedad").value || $("durNov").value==="parte"; }
 function onNovedad(){
   $("durBox").classList.toggle("hide",!$("novedad").value);
   $("laborBox").classList.toggle("hide",!trabaja());
-  $("obsLabel").textContent = $("novedad").value&&!trabaja() ? "Detalle de la novedad (opcional)" : "Observaciones (opcional)";
+  $("obsBox").classList.toggle("hide",!$("novedad").value);
 }
 const SOLO_T="Solo tiempo (sin cantidad)";
-$("unidadSel").innerHTML='<option value="">Seleccione</option>'+CONFIG.UNIDADES.map(u=>`<option>${u}</option>`).join("")+`<option>${SOLO_T}</option>`;
-const unidad=()=>$("unidadSel").value;
-function onUnidad(){ const solo=unidad()===SOLO_T; $("cantBox").classList.toggle("hide",solo); if(solo) $("cantidad").value=""; calc(); }
-$("unidadSel").addEventListener("change",onUnidad);
-function onLabor(){
-  const l=laborObj($("labor").value);
-  $("unidadSel").value=l?l.u:""; onUnidad();
-  $("laborInfo").textContent=!l?"":l.u?`Normalmente se mide en ${l.u}.`+(l.meta?` Meta: ${fmt(l.meta,0)} ${l.u} por hora.`:" Meta aún sin definir."):"Escoja la unidad en que se mide lo que hizo.";
-  if(l&&/99$/.test(l.c)) $("obsLabel").textContent="Describa la labor realizada (obligatorio)";
-  else onNovedad();
-  calc();
+const tarjetas=()=>[...document.querySelectorAll("#tareas .tarea")];
+const q=(t,k)=>t.querySelector(`[data-k="${k}"]`);
+
+function nuevaTarea(hIni){
+  const f=fincaObj($("finca").value), ls=f?(f.lotes||[]):[];
+  const t=document.createElement("div"); t.className="tarea";
+  t.innerHTML=`
+    <div class="tareaHead"><b class="tNum"></b><button type="button" class="quitar" data-k="quitar">✕ Quitar</button></div>
+    <label>Labor realizada</label>
+    <select data-k="labor"></select>
+    <div class="hint" data-k="info"></div>
+    <label>Lotes (puede marcar varios)</label>
+    <div class="chk" data-k="lotes">${ls.length?`<label><input type="checkbox" data-k="todos"> <b>Todos</b></label>`+ls.map(l=>`<label><input type="checkbox" class="lote" value="${esc(l)}"> ${esc(l)}</label>`).join(""):`<span class="note">${f?"Esta finca no tiene lotes cargados":"Primero elija la finca"}</span>`}</div>
+    <div class="row3">
+      <div><label>Hora inicio</label><input type="time" data-k="hIni"></div>
+      <div><label>Hora fin</label><input type="time" data-k="hFin"></div>
+      <div><label>Pausas (min)</label><input type="number" data-k="pausa" min="0" step="5" value="0" inputmode="numeric"></div>
+    </div>
+    <div class="row">
+      <div><label>Unidad</label><select data-k="unidad"></select></div>
+      <div data-k="cantBox"><label>Cantidad realizada</label><input type="number" data-k="cantidad" min="0" step="any" inputmode="decimal" placeholder="Ej: 120 (sin puntos de miles)"></div>
+    </div>
+    <div class="calc">
+      <div class="kpi"><b data-k="kHoras">0,0</b><span>horas efectivas</span></div>
+      <div class="kpi"><b data-k="kRend">—</b><span data-k="kRendU">por hora</span></div>
+      <div class="kpi" data-k="kMetaBox"><b data-k="kMeta">—</b><span data-k="kMetaU">de la meta</span></div>
+    </div>
+    <label data-k="obsLabel">Observaciones de esta labor (opcional)</label>
+    <textarea data-k="obs" placeholder="Ej: plantas muy cargadas, detalle de la labor 'Otra'…"></textarea>`;
+  optLabores(q(t,"labor"),CONFIG.LABORES[cultivoActual()]||[],"Seleccione la labor");
+  q(t,"unidad").innerHTML='<option value="">Seleccione</option>'+CONFIG.UNIDADES.map(u=>`<option>${u}</option>`).join("")+`<option>${SOLO_T}</option>`;
+  q(t,"hIni").value=hIni||"";
+  const todos=q(t,"todos");
+  if(todos){ todos.addEventListener("change",()=>t.querySelectorAll(".lote").forEach(c=>c.checked=todos.checked));
+    t.querySelectorAll(".lote").forEach(c=>c.addEventListener("change",()=>{ todos.checked=[...t.querySelectorAll(".lote")].every(x=>x.checked); })); }
+  q(t,"labor").addEventListener("change",()=>onLabor(t));
+  q(t,"unidad").addEventListener("change",()=>onUnidad(t));
+  ["hIni","hFin","pausa","cantidad"].forEach(k=>q(t,k).addEventListener("input",()=>calc(t)));
+  q(t,"quitar").addEventListener("click",()=>{ t.remove(); numerar(); });
+  $("tareas").appendChild(t); numerar(); onLabor(t);
+  return t;
 }
-function calc(){
-  const h=horas($("hIni").value,$("hFin").value,$("pausa").value), q=parseFloat($("cantidad").value), l0=laborObj($("labor").value), u=unidad();
+function numerar(){ const ts=tarjetas(); ts.forEach((t,i)=>{ q(t,"quitar").classList.toggle("hide",ts.length<2); t.querySelector(".tNum").textContent=ts.length>1?`Labor ${i+1}`:"Labor"; }); }
+function reiniciarTareas(hIni){ $("tareas").innerHTML=""; nuevaTarea(hIni); }
+$("btnOtra").addEventListener("click",()=>{
+  const ts=tarjetas(), ult=ts[ts.length-1];
+  const t=nuevaTarea(ult?q(ult,"hFin").value:"");
+  t.scrollIntoView({behavior:"smooth",block:"start"}); q(t,"labor").focus();
+});
+const unidadDe=t=>q(t,"unidad").value;
+function onUnidad(t){ const solo=unidadDe(t)===SOLO_T; q(t,"cantBox").classList.toggle("hide",solo); if(solo) q(t,"cantidad").value=""; calc(t); }
+function onLabor(t){
+  const l=laborObj(q(t,"labor").value);
+  const otra=l&&/99$/.test(l.c);
+  q(t,"unidad").value=!l?"":l.u?l.u:otra?"":SOLO_T; onUnidad(t);
+  q(t,"info").textContent=!l?"":l.u?`Normalmente se mide en ${l.u}.`+(l.meta?` Meta: ${fmt(l.meta,0)} ${l.u} por hora.`:" Meta aún sin definir."):otra?"Escoja la unidad en que se mide lo que hizo.":"Se registra solo el tiempo. Si quiere, cambie la unidad.";
+  q(t,"obsLabel").textContent=l&&/99$/.test(l.c)?"Describa la labor realizada (obligatorio)":"Observaciones de esta labor (opcional)";
+  calc(t);
+}
+function calc(t){
+  const h=horas(q(t,"hIni").value,q(t,"hFin").value,q(t,"pausa").value), cant=parseFloat(q(t,"cantidad").value), l0=laborObj(q(t,"labor").value), u=unidadDe(t);
   const l=l0?{...l0,u:u&&u!==SOLO_T?u:"",meta:u===l0.u?l0.meta:null}:null;
-  $("kHoras").textContent=fmt(h);
-  const r=h>0&&q>=0&&l&&l.u?q/h:NaN;
-  $("kRend").textContent=fmt(r); $("kRendU").textContent=l&&l.u?`${l.u}/hora`:"por hora";
+  q(t,"kHoras").textContent=fmt(h);
+  const r=h>0&&cant>=0&&l&&l.u?cant/h:NaN;
+  q(t,"kRend").textContent=fmt(r); q(t,"kRendU").textContent=l&&l.u?`${l.u}/hora`:"por hora";
   const pct=l&&l.meta&&isFinite(r)?r/l.meta*100:NaN;
-  $("kMeta").textContent=isFinite(pct)?fmt(pct,0)+" %":"—";
-  $("kMetaU").textContent=l&&!l.meta?"meta sin definir":"de la meta";
-  $("kMetaBox").className="kpi "+semaforo(pct);
+  q(t,"kMeta").textContent=isFinite(pct)?fmt(pct,0)+" %":"—";
+  q(t,"kMetaU").textContent=l&&!l.meta?"meta sin definir":"de la meta";
+  q(t,"kMetaBox").className="kpi "+semaforo(pct);
 }
-function msg(el,txt,cls){ el.textContent=txt; el.className="msg show "+cls; clearTimeout(el._t); el._t=setTimeout(()=>el.className="msg",6000); }
+function msg(el,txt,cls){ el.textContent=txt; el.className="msg show "+cls; clearTimeout(el._t); el._t=setTimeout(()=>el.className="msg",8000); }
 
 $("finca").addEventListener("change",onFinca);
 $("novedad").addEventListener("change",onNovedad);
 $("durNov").addEventListener("change",onNovedad);
-$("labor").addEventListener("change",onLabor);
-["hIni","hFin","pausa","cantidad"].forEach(id=>$(id).addEventListener("input",calc));
 
 $("f").addEventListener("submit",e=>{
   e.preventDefault();
@@ -115,42 +154,58 @@ $("f").addEventListener("submit",e=>{
   if($("llovio").value==="Sí"&&(!$("lluDesde").value||!$("lluHasta").value||$("lluHasta").value<=$("lluDesde").value)) return msg($("msg"),"Indique de qué hora a qué hora llovió.","bad");
   guardarDia();
   const dia=getLS(DIAS,{})[diaKey()]||{};
-  const base={
+  const novDet=$("obs").value.trim();
+  const base=()=>({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), creado:new Date().toISOString(),
     fecha:$("fecha").value, finca:f.nombre, cultivo:f.cultivo, lider:dia.lider||"", lluviaMm:dia.lluvia===""||dia.lluvia==null?"":Number(dia.lluvia),
     llovioHoy:dia.llovio||"No", lluviaDesde:dia.llovio==="Sí"?(dia.desde||""):"", lluviaHasta:dia.llovio==="Sí"?(dia.hasta||""):"", novedadDia:dia.nov||"",
     trabajador:op, novedad:nov||"", novedadDuracion:nov?(trab?"Parte del día":"Todo el día"):"",
     lote:"", laborCod:"", labor:"", grupo:"", unidad:"", horaInicio:"", horaFin:"", pausaMin:"", horas:"", cantidad:"", rendimiento:"", meta:"", cumplimiento:"",
-    obs:$("obs").value.trim(), estado:"pendiente"
-  };
-  const recs=load();
+    obs:novDet, estado:"pendiente"
+  });
+  const recs=load(), nuevos=[];
+  const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b;};
   let aviso="";
   if(trab){
-    const l0=laborObj($("labor").value), h=horas($("hIni").value,$("hFin").value,$("pausa").value), u=unidad(), solo=u===SOLO_T;
-    if(!l0) return msg($("msg"),"Elija la labor.","bad");
-    if(!u) return msg($("msg"),"Escoja la unidad de la cantidad.","bad");
-    const l={...l0,u:solo?"":u,meta:u===l0.u?l0.meta:null}, q=solo?NaN:parseFloat($("cantidad").value);
-    if(h<=0) return msg($("msg"),"Revise las horas: la hora fin debe ser mayor que la de inicio (descontando pausas).","bad");
-    if(!solo&&!(q>=0)) return msg($("msg"),"Escriba la cantidad realizada.","bad");
-    const dec=($("cantidad").value.split(/[.,]/)[1]||"");
-    if(!solo&&dec.length>2) return msg($("msg"),"Escriba la cantidad sin puntos de miles. Ej: 4991, no 4.991","bad");
-    if(recs.some(r=>r.fecha===base.fecha&&r.trabajador===op&&r.laborCod===l0.c&&r.horaInicio===$("hIni").value))
-      return msg($("msg"),`Ese registro ya existe: ${op}, ${l0.n}, desde las ${$("hIni").value}.`,"bad");
-    if(/99$/.test(l.c)&&!base.obs) return msg($("msg"),"Para 'Otra' describa la labor en observaciones.","bad");
-    const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b;};
-    const cruce=recs.find(r=>r.horaInicio&&r.fecha===base.fecha&&r.trabajador===op&&toMin($("hIni").value)<toMin(r.horaFin)&&toMin($("hFin").value)>toMin(r.horaInicio));
-    if(cruce) aviso=` Ojo: se cruza con otro registro de ${op} (${cruce.horaInicio}–${cruce.horaFin}).`;
-    Object.assign(base,{lote:lotesSel(),laborCod:l.c,labor:l.n,unidad:l.u,horaInicio:$("hIni").value,horaFin:$("hFin").value,
-      pausaMin:Number($("pausa").value)||0,horas:+h.toFixed(2),cantidad:solo?"":q,rendimiento:solo?"":+(q/h).toFixed(2),
-      meta:l.meta??"",cumplimiento:l.meta&&!solo?+((q/h)/l.meta*100).toFixed(1):""});
+    const ts=tarjetas();
+    for(let i=0;i<ts.length;i++){
+      const t=ts[i], n=ts.length>1?`Labor ${i+1}: `:"";
+      const err=m=>{ t.classList.add("tErr"); setTimeout(()=>t.classList.remove("tErr"),6000); return msg($("msg"),n+m,"bad"); };
+      const l0=laborObj(q(t,"labor").value), hI=q(t,"hIni").value, hF=q(t,"hFin").value, h=horas(hI,hF,q(t,"pausa").value), u=unidadDe(t), solo=u===SOLO_T;
+      if(!l0) return err("elija la labor.");
+      if(!u) return err("escoja la unidad de la cantidad.");
+      const l={...l0,u:solo?"":u,meta:u===l0.u?l0.meta:null}, cant=solo?NaN:parseFloat(q(t,"cantidad").value);
+      if(h<=0) return err("revise las horas: la hora fin debe ser mayor que la de inicio (descontando pausas).");
+      if(!solo&&!(cant>=0)) return err("escriba la cantidad realizada.");
+      const dec=(q(t,"cantidad").value.split(/[.,]/)[1]||"");
+      if(!solo&&dec.length>2) return err("escriba la cantidad sin puntos de miles. Ej: 4991, no 4.991");
+      const obsT=q(t,"obs").value.trim();
+      if(/99$/.test(l.c)&&!obsT) return err("para 'Otra' describa la labor en observaciones.");
+      if(recs.some(r=>r.fecha===$("fecha").value&&r.trabajador===op&&r.laborCod===l0.c&&r.horaInicio===hI))
+        return err(`ese registro ya existe: ${op}, ${l0.n}, desde las ${hI}.`);
+      const choque=nuevos.find(r=>toMin(hI)<toMin(r.horaFin)&&toMin(hF)>toMin(r.horaInicio));
+      if(choque) return err(`el horario ${hI}–${hF} se cruza con ${choque.labor} (${choque.horaInicio}–${choque.horaFin}).`);
+      const lotes=[...t.querySelectorAll(".lote:checked")].map(c=>c.value).join(", ");
+      const r=base();
+      Object.assign(r,{lote:lotes,laborCod:l.c,labor:l.n,unidad:l.u,horaInicio:hI,horaFin:hF,
+        pausaMin:Number(q(t,"pausa").value)||0,horas:+h.toFixed(2),cantidad:solo?"":cant,rendimiento:solo?"":+(cant/h).toFixed(2),
+        meta:l.meta??"",cumplimiento:l.meta&&!solo?+((cant/h)/l.meta*100).toFixed(1):"",
+        obs:[obsT,novDet].filter(Boolean).join(" · ")});
+      nuevos.push(r);
+    }
+    const cruce=nuevos.map(n=>recs.find(r=>r.horaInicio&&r.fecha===n.fecha&&r.trabajador===op&&toMin(n.horaInicio)<toMin(r.horaFin)&&toMin(n.horaFin)>toMin(r.horaInicio))).find(Boolean);
+    if(cruce) aviso=` Ojo: se cruza con otro registro de ${op} ya guardado (${cruce.horaInicio}–${cruce.horaFin}).`;
   } else {
-    if(recs.some(r=>r.fecha===base.fecha&&r.trabajador===op&&r.novedadDuracion==="Todo el día"))
+    if(recs.some(r=>r.fecha===$("fecha").value&&r.trabajador===op&&r.novedadDuracion==="Todo el día"))
       return msg($("msg"),`${op} ya tiene una novedad de todo el día registrada en esta fecha.`,"bad");
+    nuevos.push(base());
   }
-  recs.push(base); save(recs);
-  if(trab){ $("hIni").value=$("hFin").value; $("hFin").value=""; $("cantidad").value=""; $("pausa").value=0; }
-  $("obs").value=""; $("novedad").value=""; onNovedad(); calc(); refresh();
-  msg($("msg"),(trab?`Guardado ✓ ${op} — ${base.labor}.`:`Guardado ✓ ${op} — ${nov} (todo el día).`)+(aviso||(navigator.onLine?"":" Se enviará cuando haya señal.")),aviso?"mid":"ok");
+  save(recs.concat(nuevos));
+  const ultFin=trab?nuevos[nuevos.length-1].horaFin:"";
+  reiniciarTareas(ultFin);
+  $("obs").value=""; $("novedad").value=""; onNovedad(); refresh();
+  const txt=trab?(nuevos.length>1?`Guardado ✓ ${op} — ${nuevos.length} labores.`:`Guardado ✓ ${op} — ${nuevos[0].labor}.`):`Guardado ✓ ${op} — ${nov} (todo el día).`;
+  msg($("msg"),txt+(aviso||(navigator.onLine?"":" Se enviará cuando haya señal.")),aviso?"mid":"ok");
   sync();
 });
 
