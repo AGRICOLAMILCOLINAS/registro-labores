@@ -181,7 +181,7 @@ function net(){ const on=navigator.onLine; $("netDot").className="dot"+(on?"":" 
 
 /* ---------- Lista ---------- */
 let remotos=null, remotosHora="", claveSup="";
-function datos(){ const loc=load(); if(!remotos) return loc; const ids=new Set(remotos.map(r=>String(r.id))); return remotos.concat(loc.filter(r=>!ids.has(String(r.id)))); }
+function datos(){ const loc=load(); if(!remotos) return loc; const ids=new Set(remotos.map(r=>String(r.id))); return remotos.concat(loc.filter(r=>r.estado==="pendiente"&&!ids.has(String(r.id)))); }
 async function cargarRemotos(clave){
   if(!CONFIG.SYNC_URL) throw new Error("sin hoja");
   if(!navigator.onLine) throw new Error("offline");
@@ -189,7 +189,8 @@ async function cargarRemotos(clave){
   const res=await fetch(CONFIG.SYNC_URL+"?clave="+encodeURIComponent(clave)+"&desde="+d.toISOString().slice(0,10)+"&t="+Date.now());
   const j=await res.json();
   if(!j.ok) throw new Error(j.error||"error");
-  remotos=j.registros||[]; remotosHora=new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+  if(!Array.isArray(j.registros)) throw new Error("version");
+  remotos=j.registros; remotosHora=new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
   document.querySelectorAll(".actHora").forEach(e=>e.textContent=`Datos de todas las fincas · actualizado ${remotosHora} · ${remotos.length} registros`);
 }
 async function actualizar(btn){
@@ -251,7 +252,7 @@ $("btnPin").addEventListener("click",async()=>{
   const c=$("pin").value.trim(); if(!c) return;
   const b=$("btnPin"); b.disabled=true; b.textContent="Verificando…";
   try{ await cargarRemotos(c); claveSup=c; $("pin").value=""; setAdmin(true); }
-  catch(e){ msg($("msgPin"), e.message==="clave"?"Clave incorrecta.":e.message==="offline"?"Necesita internet para ver la información de todas las fincas.":"No se pudo conectar con la hoja. Intente de nuevo.","bad"); }
+  catch(e){ msg($("msgPin"), e.message==="clave"?"Clave incorrecta.":e.message==="version"?"Falta actualizar el código de la Google Sheet (Apps Script) a la versión nueva.":e.message==="offline"?"Necesita internet para ver la información de todas las fincas.":"No se pudo conectar con la hoja. Intente de nuevo.","bad"); }
   finally{ b.disabled=false; b.textContent="Entrar"; }
 });
 document.querySelectorAll(".btnAct").forEach(b=>b.addEventListener("click",()=>actualizar(b)));
