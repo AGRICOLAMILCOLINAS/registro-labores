@@ -61,11 +61,11 @@ const CONFIG = {
   },
 
   FINCAS: [
-    {nombre:"La Morelia", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Adalberto","Francisco"]},
-    {nombre:"Huerto Palermo", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"], cultivo:"Aguacate Hass", operarios:["Jesús"]},
-    {nombre:"El Porvenir", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis"]},
-    {nombre:"San Luis", lotes:["Lote 1","Lote 2","Lote 3"],       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro"]},
-    {nombre:"Paltacs", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],        cultivo:"Aguacate Hass", operarios:["John","Alejandro","Marta"]}
+    {nombre:"La Morelia", lider:"Edwin", lotes:["Lote 1","Lote 2","Lote 3","Lote 4","Lote 5","Lote 6"],     cultivo:"Aguacate Hass", operarios:["Adalberto","Francisco"]},
+    {nombre:"Huerto Palermo", lider:"Edwin", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"], cultivo:"Aguacate Hass", operarios:["Jesús"]},
+    {nombre:"El Porvenir", lider:"James", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],    cultivo:"Aguacate Hass", operarios:["Jorge","Alexis"]},
+    {nombre:"San Luis", lider:"Felipe", lotes:["Lote 1","Lote 2","Lote 3"],       cultivo:"Aguacate Hass", operarios:["Yeison","Don Albeiro"]},
+    {nombre:"Paltacs", lider:"Felipe", lotes:["Lote 1","Lote 2","Lote 3","Lote 4"],        cultivo:"Aguacate Hass", operarios:["John","Alejandro","Marta"]}
   ]
 };
 /* ===================================================================== */

@@ -29,7 +29,8 @@ function guardarDia(){
 }
 function cargarDia(){
   const x=getLS(DIAS,{})[diaKey()]||{};
-  if(x.lider) $("lider").value=x.lider;
+  const ff=fincaObj($("finca").value);
+  if(ff&&ff.lider) $("lider").value=ff.lider; else if(x.lider) $("lider").value=x.lider;
   $("lluvia").value=x.lluvia??""; $("novDia").value=x.nov??"";
   $("llovio").value=x.llovio||""; $("lluDesde").value=x.desde||""; $("lluHasta").value=x.hasta||""; onLlovio();
 }
@@ -55,7 +56,8 @@ function onFinca(){
   const todosOps=[...new Set(CONFIG.FINCAS.flatMap(x=>x.operarios))];
   optList($("operario"),[...(f?f.operarios:todosOps),"Contratista"],"Seleccione el operario");
   onOperario();
-  if(f){ pref("finca",f.nombre); $("lider").value=pref("lider_"+f.nombre)||f.lider||""; }
+  if(f){ pref("finca",f.nombre); $("lider").value=f.lider||pref("lider_"+f.nombre)||""; }
+  $("lider").readOnly=!!(f&&f.lider);
   reiniciarTareas("");
   cargarDia(); onNovedad();
 }
