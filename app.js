@@ -14,6 +14,7 @@ const todas=()=>Object.values(CONFIG.LABORES).flat();
 const laborObj=c=>todas().find(l=>l.c===c);
 const optList=(sel,items,ph)=>{ sel.innerHTML=(ph!==undefined?`<option value="">${ph}</option>`:"")+items.map(i=>`<option>${esc(i)}</option>`).join(""); };
 function optLabores(sel,labs,ph){
+  labs=[...labs].sort((a,b)=>(/99$/.test(a.c)-/99$/.test(b.c))||a.n.localeCompare(b.n,"es",{sensitivity:"base"}));
   sel.innerHTML=`<option value="">${ph}</option>`+labs.map(l=>`<option value="${l.c}">${esc(l.n)}</option>`).join("");
 }
 function horas(ini,fin,pausa){ if(!ini||!fin) return 0; const[a,b]=ini.split(":").map(Number),[c,d]=fin.split(":").map(Number); const m=(c*60+d)-(a*60+b)-(Number(pausa)||0); return m>0?m/60:0; }
