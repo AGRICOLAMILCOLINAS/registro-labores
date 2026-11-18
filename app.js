@@ -185,12 +185,12 @@ function datos(){ const loc=load(); if(!remotos) return loc; const ids=new Set(r
 async function cargarRemotos(clave){
   if(!CONFIG.SYNC_URL) throw new Error("sin hoja");
   if(!navigator.onLine) throw new Error("offline");
-  const d=new Date(); d.setDate(d.getDate()-180);
-  const res=await fetch(CONFIG.SYNC_URL+"?clave="+encodeURIComponent(clave)+"&desde="+d.toISOString().slice(0,10)+"&t="+Date.now());
+  const res=await fetch(CONFIG.SYNC_URL+"?clave="+encodeURIComponent(clave)+"&t="+Date.now());
   const j=await res.json();
   if(!j.ok) throw new Error(j.error||"error");
   if(!Array.isArray(j.registros)) throw new Error("version");
-  remotos=j.registros; remotosHora=new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+  const f2=v=>{ v=String(v??""); const m=v.match(/^(\d{4}-\d{2}-\d{2})/); if(m) return m[1]; const m2=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m2?`${m2[3]}-${m2[2].padStart(2,"0")}-${m2[1].padStart(2,"0")}`:v; };
+  remotos=j.registros.map(r=>({...r,fecha:f2(r.fecha)})); remotosHora=new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
   document.querySelectorAll(".actHora").forEach(e=>e.textContent=`Datos de todas las fincas · actualizado ${remotosHora} · ${remotos.length} registros`);
 }
 async function actualizar(btn){
