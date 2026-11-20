@@ -24,7 +24,7 @@ const semaforo=p=>!isFinite(p)?"":p>=90?"ok":p>=70?"mid":"bad";
 const diaKey=()=>$("fecha").value+"|"+$("finca").value;
 function guardarDia(){
   const d=getLS(DIAS,{});
-  d[diaKey()]={lider:$("lider").value,lluvia:$("lluvia").value,llovio:$("llovio").value,desde:$("lluDesde").value,hasta:$("lluHasta").value,nov:$("novDia").value};
+  d[diaKey()]={lider:$("lider").value,lluvia:$("lluvia").value,llovio:$("llovio").value,rangos:rangosLluvia(),nov:$("novDia").value};
   setLS(DIAS,d);
 }
 function cargarDia(){
@@ -32,13 +32,28 @@ function cargarDia(){
   const ff=fincaObj($("finca").value);
   if(ff&&ff.lider) $("lider").value=ff.lider; else if(x.lider) $("lider").value=x.lider;
   $("lluvia").value=x.lluvia??""; $("novDia").value=x.nov??"";
-  $("llovio").value=x.llovio||""; $("lluDesde").value=x.desde||""; $("lluHasta").value=x.hasta||""; onLlovio();
+  $("llovio").value=x.llovio||"";
+  const rg=x.rangos&&x.rangos.length?x.rangos:[{desde:x.desde||"",hasta:x.hasta||""}];
+  $("lluRangos").innerHTML=""; rg.forEach(r=>agregarRango(r.desde,r.hasta)); onLlovio();
 }
 ["lider","lluvia","novDia"].forEach(id=>$(id).addEventListener("input",guardarDia));
 $("lider").addEventListener("change",()=>{ if($("finca").value) pref("lider_"+$("finca").value,$("lider").value); });
 function horasLista(){ const a=[]; for(let m=5*60;m<=20*60;m+=30){ a.push(String(Math.floor(m/60)).padStart(2,"0")+":"+(m%60?"30":"00")); } return a; }
 function fmtHora(t){ const[h,m]=t.split(":").map(Number); return ((h+11)%12+1)+":"+String(m).padStart(2,"0")+(h<12?" a. m.":" p. m."); }
-["lluDesde","lluHasta"].forEach(id=>{ $(id).innerHTML='<option value="">—</option>'+horasLista().map(t=>`<option value="${t}">${fmtHora(t)}</option>`).join(""); $(id).addEventListener("change",guardarDia); });
+function agregarRango(d,hh){
+  const ops='<option value="">—</option>'+horasLista().map(t=>`<option value="${t}">${fmtHora(t)}</option>`).join("");
+  const n=$("lluRangos").children.length;
+  const div=document.createElement("div"); div.className="row lluRango"; div.style.alignItems="end";
+  div.innerHTML=`<div><label>Llovió desde</label><select class="lluD">${ops}</select></div>
+    <div><label>Hasta ${n?`<a href="#" class="lluX" style="float:right;color:var(--red);text-decoration:none">✕ Quitar</a>`:""}</label><select class="lluH">${ops}</select></div>`;
+  div.querySelector(".lluD").value=d||""; div.querySelector(".lluH").value=hh||"";
+  div.querySelectorAll("select").forEach(s=>s.addEventListener("change",guardarDia));
+  const x=div.querySelector(".lluX"); if(x) x.addEventListener("click",e=>{ e.preventDefault(); div.remove(); guardarDia(); });
+  $("lluRangos").appendChild(div);
+}
+function rangosLluvia(){ return [...document.querySelectorAll(".lluRango")].map(r=>({desde:r.querySelector(".lluD").value,hasta:r.querySelector(".lluH").value})); }
+$("btnLluMas").addEventListener("click",()=>{ agregarRango(); guardarDia(); });
+agregarRango();
 function onLlovio(){ $("lluviaHoras").classList.toggle("hide",$("llovio").value!=="Sí"); }
 $("llovio").addEventListener("change",()=>{ onLlovio(); guardarDia(); });
 $("fecha").addEventListener("change",cargarDia);
@@ -158,14 +173,20 @@ $("f").addEventListener("submit",e=>{
   if(!f){ $("finca").focus(); return msg($("msg"),"Falta elegir la finca (arriba, en Datos del día).","bad"); }
   if(!op) return msg($("msg"),"Elija el operario agrícola.","bad");
   if($("lluvia").value.trim()===""){ $("lluvia").focus(); return msg($("msg"),"Escriba la lluvia de ayer en mm (pluviómetro). Si no llovió, ponga 0.","bad"); }
-  if($("llovio").value==="Sí"&&(!$("lluDesde").value||!$("lluHasta").value||$("lluHasta").value<=$("lluDesde").value)) return msg($("msg"),"Indique de qué hora a qué hora llovió.","bad");
+  if($("llovio").value==="Sí"){
+    const rg=rangosLluvia().sort((p,q)=>p.desde.localeCompare(q.desde));
+    for(let i=0;i<rg.length;i++){
+      if(!rg[i].desde||!rg[i].hasta||rg[i].hasta<=rg[i].desde) return msg($("msg"),`Revise el rango de lluvia ${i+1}: indique de qué hora a qué hora llovió.`,"bad");
+      if(i&&rg[i].desde<rg[i-1].hasta) return msg($("msg"),"Dos rangos de lluvia se cruzan. Revíselos.","bad");
+    }
+  }
   guardarDia();
   const dia=getLS(DIAS,{})[diaKey()]||{};
   const novDet=$("obs").value.trim();
   const base=()=>({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), creado:new Date().toISOString(),
     fecha:$("fecha").value, finca:f.nombre, cultivo:f.cultivo, lider:dia.lider||"", lluviaMm:dia.lluvia===""||dia.lluvia==null?"":Number(dia.lluvia),
-    llovioHoy:dia.llovio||"No", lluviaDesde:dia.llovio==="Sí"?(dia.desde||""):"", lluviaHasta:dia.llovio==="Sí"?(dia.hasta||""):"", novedadDia:dia.nov||"",
+    llovioHoy:dia.llovio||"No", lluviaDesde:dia.llovio==="Sí"?[...(dia.rangos||[])].sort((p,q)=>p.desde.localeCompare(q.desde)).map(r=>r.desde).join(", "):"", lluviaHasta:dia.llovio==="Sí"?[...(dia.rangos||[])].sort((p,q)=>p.desde.localeCompare(q.desde)).map(r=>r.hasta).join(", "):"", novedadDia:dia.nov||"",
     trabajador:op, novedad:nov||"", novedadDuracion:nov?(trab?"Parte del día":"Todo el día"):"",
     lote:"", laborCod:"", labor:"", grupo:"", unidad:"", horaInicio:"", horaFin:"", pausaMin:"", horas:"", cantidad:"", rendimiento:"", meta:"", cumplimiento:"",
     obs:novDet, estado:"pendiente"

@@ -1,6 +1,6 @@
 // Guarda la app en el celular para que abra sin internet.
 // Al cambiar cualquier archivo, subir el número de versión.
-const VERSION = "labores-v15";
+const VERSION = "labores-v16";
 const ARCHIVOS = ["./", "./index.html", "./config.js", "./app.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

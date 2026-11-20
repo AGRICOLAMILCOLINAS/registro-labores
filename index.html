@@ -103,9 +103,9 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
       <option value="">No</option>
       <option value="Sí">Sí</option>
     </select>
-    <div id="lluviaHoras" class="row hide">
-      <div><label>Llovió desde</label><select id="lluDesde"></select></div>
-      <div><label>Hasta</label><select id="lluHasta"></select></div>
+    <div id="lluviaHoras" class="hide">
+      <div id="lluRangos"></div>
+      <button type="button" class="btn small sec" id="btnLluMas" style="margin-top:8px">+ Agregar otro rango de lluvia</button>
     </div>
     <label>Novedad general del día (opcional)</label>
     <input id="novDia" placeholder="Ej: daño en la bomba, llegó insumo, visita técnica…">
